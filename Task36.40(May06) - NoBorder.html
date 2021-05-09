@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 36.40 No border</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <style>
+        .container-fluid{
+            background-image: url("images/ob_cd446b_black-bg-casinodice.jpg");
+            min-height: 100px;
+        }
+    </style>
+
+    <script>
+        var gPersonInfo = {
+            firstname: "",
+            lastname: "",
+            username: "",
+        }
+
+        const gBASE_URL = "http://42.115.221.44:8080/devcamp-lucky-dice/";
+        const gUTF8_APPLICATION_HEADER = "application/json;charset=UTF-8";
+
+        const gREQUEST_READYSTATE_FINISH_RESPONSE_READY = 4; 
+        const gREQUEST_STATUS_OK = 200;
+
+        $(document).ready(function(){
+            var v$buttonRollElement = $("#btn-nem");
+            v$buttonRollElement.on("click", function(){
+                getData();
+
+                if(isValide()){
+                    rollDiceResult();
+                }
+                
+            });  
+            
+            var v$BtnDiceHistoryElement = $("#btn-dice-history");
+            var v$TableDiceHistoryElement = $("#table-dice-history");
+            v$BtnDiceHistoryElement.on("click", function(){
+                getDiceHistory();
+            });
+
+            var vBtnVoucherHistoryElement = $("#btn-voucher-history");
+            vBtnVoucherHistoryElement.on("click", function(){
+                getVoucherHistory();
+            });
+
+            var vBtnPresentHistoryElemetn = $("#btn-prize-history");
+            vBtnPresentHistoryElemetn.on("click", function(){
+                getPresentHistory();
+            });
+        });
+
+        function getData(){
+            "use strict";
+            var v$FirstNameElement = $("#fname-input");
+            var v$LastNameElement = $("#lname-input");
+            var v$UserNameElement = $("#username-input");
+
+            gPersonInfo.firstname = v$FirstNameElement.val().trim();
+            gPersonInfo.lastname = v$LastNameElement.val().trim();
+            gPersonInfo.username = v$UserNameElement.val().trim();
+
+        }
+
+        function rollDiceResult(){
+            
+            //console.log("first name: " + gPersonInfo.firstname);
+           // console.log("last name: " + gPersonInfo.lastname);
+            //console.log("user name: " + gPersonInfo.username);
+            "use strict";
+            //creat request
+            var vXmlHttpDice = new XMLHttpRequest();
+            vXmlHttpDice.open("POST", gBASE_URL + "/dice", true);
+            vXmlHttpDice.setRequestHeader("Content-Type", gUTF8_APPLICATION_HEADER);
+            vXmlHttpDice.send(JSON.stringify(gPersonInfo));
+            vXmlHttpDice.onreadystatechange = function(){
+                if (this.readyState == gREQUEST_READYSTATE_FINISH_RESPONSE_READY && this.status == gREQUEST_STATUS_OK) {
+                    var bResponse = vXmlHttpDice.responseText;
+                    console.log("response: " + bResponse);
+                    //parsing to object
+                    var bDiceResultObject = JSON.parse(bResponse);
+                    var bDiceResult = bDiceResultObject.dice;
+                    console.log("dice: " + bDiceResult);
+                    changeDiceValueImage(bDiceResult);
+                    changeMessage(bDiceResult);
+                
+            }
+        }
+    }
+
+        function isValide(){
+            "use strict";
+            if (gPersonInfo.username === "") {
+                alert("Input user name");
+                throw("Error: you must input user name");
+            }
+            if (gPersonInfo.firstname === "") {
+                alert("Input firstname");
+                throw("Error: you must input first name");
+            }
+
+            if (gPersonInfo.lastname === "") {
+                alert("Input last name");
+                throw("Error: you must input last name");
+            }
+            return true;
+        }
+
+        function changeDiceValueImage(paramDice){
+            "use strict";
+            var v$DiceImage = $("#dice-value-image");
+            v$DiceImage.prop("src","LuckyDiceImages/" + paramDice + ".png") ;
+        }
+
+        function changeMessage(dice){
+            "use strict";
+            var v$Message = $("#message");
+            if (dice < 4) {
+                v$Message.html("Don't be sad! Try again!");
+            }
+            else {
+                v$Message.html("Congratulation!");
+            }
+        }
+    
+        function getDiceHistory(){
+            "use strict";
+            getData();
+    
+            if(gPersonInfo.username === ""){
+                alert("Input user name");
+                throw("Error: input user name");
+            }
+            else {
+                var vXmlHttpDiceHistory = new XMLHttpRequest();
+                vXmlHttpDiceHistory.open( "GET", gBASE_URL + "/dice-history?username=" + gPersonInfo.username, true);
+                vXmlHttpDiceHistory.send();
+                vXmlHttpDiceHistory.onreadystatechange = 
+                function() {
+                    if (this.readyState == gREQUEST_READYSTATE_FINISH_RESPONSE_READY && this.status == gREQUEST_STATUS_OK ) {
+                        console.log(vXmlHttpDiceHistory.responseText);
+                        var bDiceHistory = JSON.parse(vXmlHttpDiceHistory.responseText);
+                        getTableDiceHistory(bDiceHistory);
+                    }
+                }
+            }
+            
+        }
+
+        function getTableDiceHistory(paramDices){
+            "use strict";
+            
+            var vDivTable = $("#div-table-here");
+                vDivTable.children().remove();
+            var v$TableDiceHistoryElement = $("<table>");  
+            var vDiceHistoryData = "<tr><th>Lượt</th><th>Dice</th></tr>";   
+            for (var bI = 0; bI < paramDices.dices.length; bI++){
+                vDiceHistoryData += "<tr>" + "<td>" + (bI+1) + "</td>" + "<td>" + paramDices.dices[bI] + "</td>" + "</tr>";
+                
+            } 
+            v$TableDiceHistoryElement.append(vDiceHistoryData);  
+            v$TableDiceHistoryElement.prop("class", "table table-striped table-hover");
+            vDivTable.append(v$TableDiceHistoryElement);
+        }
+    
+        function getVoucherHistory(){
+            getData();
+            if (gPersonInfo.username === ""){
+                alert("Input user name");
+                throw("Error: No user name input");
+            }
+            else {
+                var vXmlHttpVoucherHistory = new XMLHttpRequest();
+                vXmlHttpVoucherHistory.open( "GET", gBASE_URL + "/voucher-history?username=" + gPersonInfo.username, true);
+                vXmlHttpVoucherHistory.send();
+                vXmlHttpVoucherHistory.onreadystatechange = 
+                function() {
+                    if (this.readyState == gREQUEST_READYSTATE_FINISH_RESPONSE_READY && this.status == gREQUEST_STATUS_OK) {
+                        var bVoucherHistoryJSON = vXmlHttpVoucherHistory.responseText;
+                        //console.log(bVoucherHistoryJSON);
+                        var bVoucherHistory = JSON.parse(bVoucherHistoryJSON);
+                        console.log(bVoucherHistory);
+                        createVoucherHistoryTable(bVoucherHistory.vouchers);
+                    }
+                }  
+            }
+             
+        }
+
+        function createVoucherHistoryTable(paramVouchers){
+            "use strict";
+            var bDivTable = $("#div-table-here");
+            bDivTable.children().remove();
+            var bVoucherTable = $("<table>");
+            var bTableData = "<tr>";
+                bTableData += "<th>No.</th>";
+                bTableData += "<th>id</th>";
+                bTableData += "<th>Voucher Code</th>";
+                bTableData += "<th>Percentage Discount</th>";
+                bTableData += "</tr>";
+            for(var bI = 0; bI < paramVouchers.length; bI++){
+                bTableData += "<tr>";
+                bTableData += "<td>" + (bI + 1) + "</td>";
+                bTableData += "<td>" + paramVouchers[bI].id + "</td>";
+                bTableData += "<td>" + paramVouchers[bI].maVoucher + "</td>";
+                bTableData += "<td>" + paramVouchers[bI].phanTramGiamGia + "</td>";
+                bTableData += "</tr>";
+            }
+            bVoucherTable.append(bTableData);
+            bVoucherTable.prop("class","table table-striped table-hover text-center");
+            bDivTable.append(bVoucherTable);
+        }
+
+        function getPresentHistory(){
+            getData();
+            if (gPersonInfo.username === ""){
+                alert("Input user name");
+                throw("Error: No user name input");
+            }
+            else {
+                var vXmlHttpPrizeHistory = new XMLHttpRequest();
+                vXmlHttpPrizeHistory.open( "GET", gBASE_URL + "/prize-history?username=" + gPersonInfo.username, true);
+                vXmlHttpPrizeHistory.send();
+                vXmlHttpPrizeHistory.onreadystatechange = 
+                function() {
+                    if (this.readyState == gREQUEST_READYSTATE_FINISH_RESPONSE_READY && this.status == gREQUEST_STATUS_OK) {
+                        var bPrizeHistoryJSON = vXmlHttpPrizeHistory.responseText;
+                        //console.log(bPrizeHistoryJSON);
+                        var bPrizeHistory = JSON.parse(bPrizeHistoryJSON);
+                        console.log(bPrizeHistory);
+                        createTablePrizeHistory(bPrizeHistory.prizes);
+                    }
+                }
+            }   
+        }
+    
+        function createTablePrizeHistory(paramPrizes){
+            "use strict";
+            var vDivTablePresentHistory = $("#div-table-here");
+            vDivTablePresentHistory.children().remove();
+            var vTablePresentHistory = $("<table>");
+                vTablePresentHistory.prop("class", "table table-striped table-hover");
+            var vPresentHistoryData = "<tr><th>No.</th><th>Present</th></tr>";
+            for (var bI = 0; bI < paramPrizes.length; bI++){
+                vPresentHistoryData += "<tr>";
+                vPresentHistoryData += "<td>" + (bI + 1) + "</td>";
+                vPresentHistoryData += "<td>" + paramPrizes[bI] + "</td>";
+                vPresentHistoryData += "<tr>";
+            }
+            vTablePresentHistory.append(vPresentHistoryData);
+            vDivTablePresentHistory.append(vTablePresentHistory);
+
+        }
+    
+    </script>
+</head>
+<body>
+    <div class="container-fluid mb-3"></div>
+    
+    <div class="container">
+        <div class="row ">
+            <div class="col-sm-5">
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <h4>Nhập thông tin của bạn</h4>
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-4">
+                        <label class="form-control" style="border: none;">Username</label>
+                    </div>
+                    <div class="col-sm-8">
+                        <input id="username-input" type="text" class="form-control" placeholder="Nhập username" required>
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-4">
+                        <label class="form-control" style="border: none;">First name</label>
+                    </div>
+                    <div class="col-sm-8">
+                        <input id = "fname-input" type="text" class="form-control" placeholder="Nhập first name" required>
+                    </div>
+                </div>
+                <div class="row form-group  ">
+                    <div class="col-sm-4">
+                        <label class="form-control" style="border: none;">Last name</label>
+                    </div>
+                    <div class="col-sm-8">
+                        <input id = "lname-input" type="text" class="form-control" placeholder="Nhập last name" required>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4 text-center">
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <button id="btn-nem" class="btn btn-success">Ném</button>
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <img id="dice-value-image" src="images\dice_noun_002_10624.jpg" alt="loading dice image" style="width: 100px; height: 100px;">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <p id = "message">CHúc mừng</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3 text-center">
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <p>Voucher</p>
+                        <p>ID2113</p>
+                        <p>20%</p>
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <img src="images\motorbike.png" alt="loading present" style="width: 120px; height: 120px">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row text-center form-group">
+            <div class="col-sm-12">
+                <button id="btn-dice-history" class="btn btn-success">Dice History</button>
+                <button id="btn-voucher-history" class="btn btn-info">Voucher History</button>
+                <button id="btn-prize-history" class="btn btn-info">Present History</button>
+            </div>
+        </div>
+        <div class="row">
+            <div id="div-table-here" class="col-sm-12"></div>
+        </div>
+    </div>
+    
+</body>
+</html>
